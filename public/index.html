@@ -27,46 +27,76 @@
         </section>
 
         <section id="dashboardSection" class="hidden space-y-6">
-            <div id="stockWidget" class="hidden bg-white p-6 rounded shadow border">
-                <h3 class="font-bold text-lg mb-4">Live Warehouse Stock Availability</h3>
+            
+            <!-- Global Stock Availability -->
+            <div id="stockWidget" class="bg-white p-6 rounded shadow border">
+                <h3 class="font-bold text-lg mb-4">Material Availability</h3>
                 <table class="w-full text-left text-sm border-collapse">
-                    <tr class="bg-gray-100 border-b"><th class="p-2">Item Code</th><th class="p-2">Name</th><th class="p-2 text-blue-700">Available Stock</th></tr>
+                    <tr class="bg-gray-100 border-b"><th class="p-2">Name</th><th class="p-2 text-blue-700">Available Stock</th></tr>
                     <tbody id="stockTableBody"></tbody>
                 </table>
             </div>
 
-            <!-- Master Admin UI -->
-            <div id="masterAdminView" class="hidden bg-white p-6 rounded shadow border">
-                <h3 class="font-bold mb-4 text-purple-800">System Administration - Create User</h3>
-                <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
-                    <input type="text" id="newUserName" placeholder="Company/Full Name" required class="border p-2 rounded text-sm">
-                    <select id="newUserRole" required class="border p-2 rounded text-sm">
-                        <option value="CONTRACTOR">Contractor</option>
-                        <option value="PROJECT_APPROVER">Project Approver</option>
-                        <option value="MATERIAL_DEPT">Material Department</option>
-                    </select>
-                    <input type="text" id="newUserUsername" placeholder="Login Username" required class="border p-2 rounded text-sm">
-                    <input type="password" id="newUserPassword" placeholder="Password" required class="border p-2 rounded text-sm">
-                    <input type="email" id="newUserEmail" placeholder="Email Address" required class="border p-2 rounded text-sm">
-                    <button type="submit" class="bg-purple-700 text-white px-4 py-2 rounded text-sm md:col-span-2">Create User & Send Email</button>
-                </form>
+            <!-- Master Admin Controls -->
+            <div id="masterAdminView" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded shadow border">
+                    <h3 class="font-bold mb-4 text-purple-800">Create Material</h3>
+                    <form onsubmit="createMaterial(event)" class="space-y-3">
+                        <input type="text" id="matName" placeholder="Name of Material" required class="w-full border p-2 rounded text-sm">
+                        <select id="matUnit" onchange="toggleUnit()" class="w-full border p-2 rounded text-sm" required>
+                            <option value="">Select Unit...</option><option value="Each">Each</option><option value="Meter">Meter</option>
+                            <option value="KG">KG</option><option value="Litre">Litre</option><option value="Other">Other</option>
+                        </select>
+                        <input type="text" id="matUnitCustom" placeholder="Specify Unit" class="hidden w-full border p-2 rounded text-sm">
+                        <button type="submit" class="bg-purple-700 text-white px-4 py-2 rounded text-sm w-full">Add Material</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded shadow border">
+                    <h3 class="font-bold mb-4 text-purple-800">Tag Contract to Contractor</h3>
+                    <form onsubmit="createContract(event)" class="space-y-3">
+                        <select id="newContractor" class="w-full border p-2 rounded text-sm" required></select>
+                        <input type="text" id="newContractNo" placeholder="Contract Number" required class="w-full border p-2 rounded text-sm">
+                        <input type="text" id="newPONo" placeholder="Call Up PO No" required class="w-full border p-2 rounded text-sm">
+                        <input type="text" id="newWorkName" placeholder="Name of Work" required class="w-full border p-2 rounded text-sm">
+                        <button type="submit" class="bg-purple-700 text-white px-4 py-2 rounded text-sm w-full">Tag Contract</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded shadow border md:col-span-2">
+                    <h3 class="font-bold mb-4 text-purple-800">Create User</h3>
+                    <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="newUserName" placeholder="Company/Full Name" required class="border p-2 rounded text-sm">
+                        <select id="newUserRole" required class="border p-2 rounded text-sm">
+                            <option value="CONTRACTOR">Contractor</option><option value="PROJECT_APPROVER">Project Approver</option>
+                            <option value="MATERIAL_DEPT">Material Department</option>
+                        </select>
+                        <input type="text" id="newUserUsername" placeholder="Login Username" required class="border p-2 rounded text-sm">
+                        <input type="password" id="newUserPassword" placeholder="Password" required class="border p-2 rounded text-sm">
+                        <input type="email" id="newUserEmail" placeholder="Email Address" required class="border p-2 rounded text-sm">
+                        <button type="submit" class="bg-purple-700 text-white px-4 py-2 rounded text-sm md:col-span-2">Create User & Email</button>
+                    </form>
+                </div>
             </div>
 
-            <!-- Contractor UI -->
-            <div id="contractorView" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Contractor UI (Multi-Item Requisition) -->
+            <div id="contractorView" class="hidden grid grid-cols-1 gap-6">
                 <div class="bg-white p-6 rounded shadow border">
                     <h3 class="font-bold mb-4">Raise Requisition</h3>
-                    <form onsubmit="submitRequisition(event)" class="space-y-3">
-                        <select id="reqContract" required class="w-full border p-2 rounded text-sm"></select>
-                        <select id="reqMaterial" required class="w-full border p-2 rounded text-sm"></select>
-                        <input type="number" step="0.01" id="reqQty" placeholder="Quantity" required class="w-full border p-2 rounded text-sm">
-                        <select id="reqApprover" required class="w-full border p-2 rounded text-sm"></select>
-                        <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm w-full">Submit</button>
+                    <form onsubmit="submitRequisition(event)" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <select id="reqContract" required class="border p-2 rounded text-sm"><option value="">Select PO / Contract...</option></select>
+                            <select id="reqApprover" required class="border p-2 rounded text-sm"><option value="">Select Approver...</option></select>
+                        </div>
+                        <div class="border p-4 rounded bg-gray-50">
+                            <h4 class="font-bold text-sm mb-2">Requested Materials</h4>
+                            <div id="reqItemsContainer" class="space-y-2"></div>
+                            <button type="button" onclick="addReqRow()" class="mt-2 text-sm text-blue-600 font-bold">+ Add Material</button>
+                        </div>
+                        <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm w-full">Submit Requisition</button>
                     </form>
                 </div>
                 <div class="bg-white p-6 rounded shadow border overflow-y-auto max-h-96">
                     <h3 class="font-bold mb-4">My Requisition Status</h3>
-                    <ul id="contractorReqList" class="space-y-2 text-sm"></ul>
+                    <div id="contractorReqList" class="space-y-4"></div>
                 </div>
             </div>
 
@@ -76,27 +106,39 @@
                 <div id="pendingApprovalsList" class="space-y-4"></div>
             </div>
 
-            <!-- Material Dept UI -->
-            <div id="materialDeptView" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Material Dept & Master Admin Inventory / Tracking -->
+            <div id="inventoryView" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded shadow border">
-                    <h3 class="font-bold mb-4 text-green-700">Approved Requisitions</h3>
+                    <h3 class="font-bold mb-4 text-green-700">Add Materials to Store</h3>
+                    <form onsubmit="addInventory(event)" class="space-y-3">
+                        <select id="invMaterial" required class="w-full border p-2 rounded text-sm"></select>
+                        <input type="number" step="0.01" id="invQty" placeholder="Quantity Received" required class="w-full border p-2 text-sm rounded">
+                        <input type="text" id="invSupplier" placeholder="Supplied By" required class="w-full border p-2 text-sm rounded">
+                        <input type="text" id="invInvoice" placeholder="Invoice No" required class="w-full border p-2 text-sm rounded">
+                        <input type="date" id="invDate" required class="w-full border p-2 text-sm rounded text-gray-500">
+                        <button type="submit" class="bg-green-700 text-white px-4 py-2 rounded text-sm w-full">Create Inventory</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded shadow border overflow-y-auto max-h-96">
+                    <h3 class="font-bold mb-4 text-blue-700">Approved Requisitions (Ready to Issue)</h3>
                     <div id="approvedReqList" class="space-y-4"></div>
                 </div>
-                <div class="bg-white p-6 rounded shadow border">
-                    <h3 class="font-bold mb-4">Receive Stock from Manufacturer</h3>
-                    <form onsubmit="receiveMaterial(event)" class="space-y-3">
-                        <select id="recMaterial" required class="w-full border p-2 rounded text-sm"></select>
-                        <input type="number" step="0.01" id="recQty" placeholder="Quantity Received" required class="w-full border p-2 text-sm rounded">
-                        <input type="text" id="recInvoice" placeholder="Invoice / Ref" required class="w-full border p-2 text-sm rounded">
-                        <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded text-sm w-full">Update Warehouse Stock</button>
-                    </form>
+                <div class="bg-white p-6 rounded shadow border md:col-span-2 overflow-x-auto">
+                    <h3 class="font-bold mb-4 text-slate-800">Issued Tracking Dashboard</h3>
+                    <table class="w-full text-left text-sm border-collapse">
+                        <tr class="bg-gray-100 border-b">
+                            <th class="p-2">Material</th><th class="p-2">Qty Issued</th><th class="p-2">Contractor</th>
+                            <th class="p-2">Contract No</th><th class="p-2">PO No</th><th class="p-2">Issued On</th><th class="p-2">Voucher No</th>
+                        </tr>
+                        <tbody id="trackingTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        let user = null; let token = localStorage.getItem('token');
+        let user = null; let token = localStorage.getItem('token'); let materialsList = [];
         const headers = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
 
         async function handleLogin(e) {
@@ -118,80 +160,117 @@
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('userInfo').innerText = `${user.company_name} (${user.role})`;
 
-            ['masterAdminView', 'contractorView', 'approverView', 'materialDeptView', 'stockWidget'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            ['masterAdminView', 'contractorView', 'approverView', 'inventoryView'].forEach(id => document.getElementById(id).classList.add('hidden'));
 
-            if(user.role === 'MASTER_ADMIN') document.getElementById('masterAdminView').classList.remove('hidden');
-            else if(user.role === 'CONTRACTOR') { document.getElementById('contractorView').classList.remove('hidden'); loadDropdowns(); loadMyReqs(); }
+            loadStock();
+            if(user.role === 'MASTER_ADMIN') { document.getElementById('masterAdminView').classList.remove('hidden'); document.getElementById('inventoryView').classList.remove('hidden'); loadAdminDropdowns(); loadTracking(); loadApproved(); }
+            else if(user.role === 'CONTRACTOR') { document.getElementById('contractorView').classList.remove('hidden'); loadContractorDropdowns(); loadMyReqs(); }
             else if(user.role === 'PROJECT_APPROVER') { document.getElementById('approverView').classList.remove('hidden'); loadPending(); }
-            else if(user.role === 'MATERIAL_DEPT') { document.getElementById('materialDeptView').classList.remove('hidden'); document.getElementById('stockWidget').classList.remove('hidden'); loadApproved(); loadStock(); loadDropdowns(); }
+            else if(user.role === 'MATERIAL_DEPT') { document.getElementById('inventoryView').classList.remove('hidden'); loadAdminDropdowns(); loadTracking(); loadApproved(); }
         }
 
+        // Master Admin Controls
+        function toggleUnit() {
+            const v = document.getElementById('matUnit').value;
+            const c = document.getElementById('matUnitCustom');
+            if(v === 'Other') { c.classList.remove('hidden'); c.setAttribute('required', 'true'); } 
+            else { c.classList.add('hidden'); c.removeAttribute('required'); }
+        }
+        async function createMaterial(e) {
+            e.preventDefault();
+            const unit = document.getElementById('matUnit').value === 'Other' ? document.getElementById('matUnitCustom').value : document.getElementById('matUnit').value;
+            await fetch('/api/materials', { method: 'POST', headers: headers(), body: JSON.stringify({ item_name: document.getElementById('matName').value, unit_of_measure: unit }) });
+            alert('Material Created'); e.target.reset(); loadStock(); loadAdminDropdowns();
+        }
+        async function createContract(e) {
+            e.preventDefault();
+            await fetch('/api/contracts', { method: 'POST', headers: headers(), body: JSON.stringify({ contract_number: document.getElementById('newContractNo').value, call_up_po_number: document.getElementById('newPONo').value, name_of_work: document.getElementById('newWorkName').value, contractor_id: document.getElementById('newContractor').value }) });
+            alert('Contract Tagged'); e.target.reset();
+        }
         async function createUser(e) {
             e.preventDefault();
-            const res = await fetch('/api/users', { method: 'POST', headers: headers(), body: JSON.stringify({ company_name: document.getElementById('newUserName').value, role: document.getElementById('newUserRole').value, username: document.getElementById('newUserUsername').value, password: document.getElementById('newUserPassword').value, email: document.getElementById('newUserEmail').value }) });
-            if (res.ok) { alert('User Created. Email dispatched.'); e.target.reset(); }
+            await fetch('/api/users', { method: 'POST', headers: headers(), body: JSON.stringify({ company_name: document.getElementById('newUserName').value, role: document.getElementById('newUserRole').value, username: document.getElementById('newUserUsername').value, password: document.getElementById('newUserPassword').value, email: document.getElementById('newUserEmail').value }) });
+            alert('User Created. Email sent.'); e.target.reset(); loadAdminDropdowns();
+        }
+        async function loadAdminDropdowns() {
+            document.getElementById('newContractor').innerHTML = '<option value="">Select Contractor...</option>' + (await (await fetch('/api/users/by-role/CONTRACTOR', {headers: headers()})).json()).map(u => `<option value="${u.id}">${u.company_name}</option>`).join('');
+            document.getElementById('invMaterial').innerHTML = '<option value="">Select Material...</option>' + (await (await fetch('/api/materials', {headers: headers()})).json()).map(m => `<option value="${m.id}">${m.item_name}</option>`).join('');
         }
 
-        async function loadDropdowns() {
-            if(user.role === 'CONTRACTOR') {
-                document.getElementById('reqContract').innerHTML = (await (await fetch('/api/contracts', {headers: headers()})).json()).map(c => `<option value="${c.id}">${c.contract_number}</option>`).join('');
-                document.getElementById('reqMaterial').innerHTML = (await (await fetch('/api/materials', {headers: headers()})).json()).map(m => `<option value="${m.id}">${m.item_name}</option>`).join('');
-                document.getElementById('reqApprover').innerHTML = (await (await fetch('/api/users/by-role/PROJECT_APPROVER', {headers: headers()})).json()).map(u => `<option value="${u.id}">${u.company_name}</option>`).join('');
-            }
-            if(user.role === 'MATERIAL_DEPT') {
-                document.getElementById('recMaterial').innerHTML = (await (await fetch('/api/materials', {headers: headers()})).json()).map(m => `<option value="${m.id}">${m.item_name}</option>`).join('');
-            }
+        // Contractor Controls
+        async function loadContractorDropdowns() {
+            materialsList = await (await fetch('/api/materials', {headers: headers()})).json();
+            document.getElementById('reqContract').innerHTML = '<option value="">Select PO / Contract...</option>' + (await (await fetch('/api/contracts', {headers: headers()})).json()).map(c => `<option value="${c.id}">PO: ${c.call_up_po_number} | Contract: ${c.contract_number}</option>`).join('');
+            document.getElementById('reqApprover').innerHTML = '<option value="">Select Approver...</option>' + (await (await fetch('/api/users/by-role/PROJECT_APPROVER', {headers: headers()})).json()).map(u => `<option value="${u.id}">${u.company_name}</option>`).join('');
+            addReqRow();
         }
-
+        function addReqRow() {
+            const div = document.createElement('div'); div.className = 'flex space-x-2 req-row';
+            div.innerHTML = `<select class="border p-2 rounded text-sm flex-1 req-mat" required><option value="">Material...</option>${materialsList.map(m=>`<option value="${m.id}">${m.item_name} (${m.unit_of_measure})</option>`).join('')}</select>
+                             <input type="number" step="0.01" class="border p-2 rounded text-sm w-32 req-qty" placeholder="Qty" required>
+                             <button type="button" onclick="this.parentElement.remove()" class="text-red-600 font-bold px-2">X</button>`;
+            document.getElementById('reqItemsContainer').appendChild(div);
+        }
         async function submitRequisition(e) {
             e.preventDefault();
-            await fetch('/api/requisitions', { method: 'POST', headers: headers(), body: JSON.stringify({ contract_id: document.getElementById('reqContract').value, material_id: document.getElementById('reqMaterial').value, requested_qty: document.getElementById('reqQty').value, project_approver_id: document.getElementById('reqApprover').value }) });
-            alert('Requisition Sent'); loadMyReqs();
+            const rows = Array.from(document.querySelectorAll('.req-row'));
+            const items = rows.map(r => ({ material_id: r.querySelector('.req-mat').value, requested_qty: r.querySelector('.req-qty').value }));
+            if(items.length === 0) return alert('Add at least one material.');
+            await fetch('/api/requisitions', { method: 'POST', headers: headers(), body: JSON.stringify({ contract_id: document.getElementById('reqContract').value, project_approver_id: document.getElementById('reqApprover').value, items }) });
+            alert('Requisition Sent'); document.getElementById('reqItemsContainer').innerHTML=''; addReqRow(); loadMyReqs();
         }
-
         async function loadMyReqs() {
-            document.getElementById('contractorReqList').innerHTML = (await (await fetch('/api/requisitions', {headers: headers()})).json()).map(r => `<li class="p-2 border rounded"><b>${r.req_number}</b> - ${r.item_name} (${r.requested_qty} ${r.unit_of_measure}) <br> Status: <b>${r.status}</b></li>`).join('');
+            const data = await (await fetch('/api/requisitions', {headers: headers()})).json();
+            document.getElementById('contractorReqList').innerHTML = data.map(r => `
+                <div class="p-3 border rounded text-sm mb-2"><b>${r.req_number}</b> (PO: ${r.call_up_po_number}) - Status: <b>${r.status}</b><br>
+                <ul class="ml-4 list-disc text-gray-600">${r.items.map(i => `<li>${i.item_name}: ${i.requested_qty} ${i.unit_of_measure}</li>`).join('')}</ul></div>
+            `).join('');
         }
 
+        // Approver Controls
         async function loadPending() {
             const data = await (await fetch('/api/requisitions', {headers: headers()})).json();
-            const matUsers = await (await fetch('/api/users/by-role/MATERIAL_DEPT', {headers: headers()})).json();
-            const mOpt = matUsers.map(u => `<option value="${u.id}">${u.company_name}</option>`).join('');
             document.getElementById('pendingApprovalsList').innerHTML = data.map(r => `
-                <div class="p-4 border rounded bg-gray-50"><div class="flex justify-between"><b>${r.req_number}</b></div><p>Contractor requests <b>${r.requested_qty} ${r.unit_of_measure}</b> of ${r.item_name}.</p>
-                <div class="flex space-x-2"><input type="number" id="qty-${r.id}" value="${r.requested_qty}" class="border p-1 w-24 text-sm rounded"><select id="mat-${r.id}" class="border p-1 text-sm flex-1">${mOpt}</select>
-                <button onclick="approve(${r.id})" class="bg-green-600 text-white px-3 py-1 rounded">Approve</button>
-                <button onclick="reject(${r.id})" class="bg-red-600 text-white px-3 py-1 rounded">Reject</button></div></div>
+                <div class="p-4 border rounded bg-gray-50 mb-2"><b>${r.req_number}</b> | Contractor: ${r.contractor_name} | PO: ${r.call_up_po_number}
+                <div class="mt-2 space-y-2">${r.items.map(i => `<div class="flex space-x-2 items-center text-sm">
+                    <span class="w-48 truncate">${i.item_name}</span><span>Req: ${i.requested_qty}</span>
+                    <input type="number" id="appqty-${i.id}" value="${i.requested_qty}" class="border p-1 w-20 rounded" title="Approve Qty"></div>`).join('')}
+                </div><div class="mt-3"><button onclick="approve(${r.id}, '${escape(JSON.stringify(r.items))}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Approve All Items</button>
+                <button onclick="reject(${r.id})" class="bg-red-600 text-white px-3 py-1 rounded text-sm ml-2">Reject</button></div></div>
             `).join('');
         }
-
-        async function approve(id) { await fetch(`/api/requisitions/${id}/approve`, { method: 'PUT', headers: headers(), body: JSON.stringify({ approved_qty: document.getElementById(`qty-${id}`).value, material_dept_id: document.getElementById(`mat-${id}`).value }) }); loadPending(); }
+        async function approve(reqId, itemsStr) {
+            const items = JSON.parse(unescape(itemsStr)).map(i => ({ id: i.id, approved_qty: document.getElementById(`appqty-${i.id}`).value }));
+            await fetch(`/api/requisitions/${reqId}/approve`, { method: 'PUT', headers: headers(), body: JSON.stringify({ items }) }); loadPending();
+        }
         async function reject(id) { await fetch(`/api/requisitions/${id}/reject`, { method: 'PUT', headers: headers() }); loadPending(); }
-        
-        async function loadApproved() {
-            document.getElementById('approvedReqList').innerHTML = (await (await fetch('/api/requisitions', {headers: headers()})).json()).map(r => `
-                <div class="p-4 border rounded bg-green-50 flex justify-between items-center"><div><b>${r.req_number}</b><br>Approved: <b>${r.approved_qty}</b></div>
-                <div><button onclick="issue(${r.id})" class="bg-blue-600 text-white px-4 py-2 rounded">Issue Stock</button>
-                <button onclick="dlPDF(${r.id})" class="bg-slate-700 text-white px-4 py-2 rounded ml-2">DL Voucher</button></div></div>
-            `).join('');
-        }
-        
-        async function issue(id) { await fetch(`/api/requisitions/${id}/issue`, { method: 'POST', headers: headers() }); loadApproved(); loadStock(); }
-        async function dlPDF(id) {
-            const res = await fetch(`/api/transactions/voucher-pdf/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
-            const a = document.createElement('a'); a.href = window.URL.createObjectURL(await res.blob()); a.download = `Voucher-${id}.pdf`; a.click();
-        }
 
-        async function receiveMaterial(e) {
+        // Inventory & Material Dept Controls
+        async function addInventory(e) {
             e.preventDefault();
-            await fetch('/api/transactions/receive-from-mfg', { method: 'POST', headers: headers(), body: JSON.stringify({ material_id: document.getElementById('recMaterial').value, quantity: document.getElementById('recQty').value, invoice_or_ref_no: document.getElementById('recInvoice').value }) });
-            alert('Stock Updated'); loadStock(); e.target.reset();
+            await fetch('/api/inventory', { method: 'POST', headers: headers(), body: JSON.stringify({ material_id: document.getElementById('invMaterial').value, quantity: document.getElementById('invQty').value, supplied_by: document.getElementById('invSupplier').value, invoice_no: document.getElementById('invInvoice').value, invoice_date: document.getElementById('invDate').value }) });
+            alert('Inventory Added'); e.target.reset(); loadStock();
         }
-
-        async function loadStock() {
-            document.getElementById('stockTableBody').innerHTML = (await (await fetch('/api/reports/material-status', {headers: headers()})).json()).map(m => `
-                <tr class="border-b"><td class="p-2">${m.item_code}</td><td class="p-2">${m.item_name}</td><td class="p-2 font-bold">${m.warehouse_balance} ${m.unit_of_measure}</td></tr>
+        async function loadApproved() {
+            const data = await (await fetch('/api/requisitions', {headers: headers()})).json();
+            document.getElementById('approvedReqList').innerHTML = data.map(r => `
+                <div class="p-3 border rounded bg-green-50 mb-2 text-sm flex justify-between items-center">
+                <div><b>${r.req_number}</b> | ${r.contractor_name} | PO: ${r.call_up_po_number}
+                <ul class="ml-4 list-disc text-gray-700">${r.items.map(i => `<li>${i.item_name}: Appr ${i.approved_qty}</li>`).join('')}</ul></div>
+                <button onclick="issue(${r.id})" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">Issue Stock</button></div>
             `).join('');
+        }
+        async function issue(id) {
+            const res = await fetch(`/api/requisitions/${id}/issue`, { method: 'POST', headers: headers() });
+            if(res.ok) { alert('Material Issued'); loadApproved(); loadStock(); loadTracking(); } else alert((await res.json()).error);
+        }
+        async function loadTracking() {
+            const data = await (await fetch('/api/reports/issued-tracking', {headers: headers()})).json();
+            document.getElementById('trackingTableBody').innerHTML = data.map(t => `<tr class="border-b"><td class="p-2">${t.item_name}</td><td class="p-2 font-bold">${t.issued_qty}</td><td class="p-2">${t.contractor_name}</td><td class="p-2">${t.contract_number}</td><td class="p-2">${t.call_up_po_number}</td><td class="p-2">${new Date(t.issued_on).toLocaleDateString()}</td><td class="p-2">${t.voucher_number}</td></tr>`).join('');
+        }
+        async function loadStock() {
+            const data = await (await fetch('/api/reports/availability', {headers: headers()})).json();
+            document.getElementById('stockTableBody').innerHTML = data.map(m => `<tr class="border-b"><td class="p-2">${m.item_name}</td><td class="p-2 font-bold">${m.warehouse_balance} ${m.unit_of_measure}</td></tr>`).join('');
         }
 
         window.onload = () => { if(token && localStorage.getItem('user')) { user = JSON.parse(localStorage.getItem('user')); initDashboard(); } };
