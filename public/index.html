@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGD Material Workflow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
+    <header class="bg-slate-900 text-white shadow py-4 px-6 flex justify-between items-center">
+        <h1 class="text-xl font-bold">📦 CGD Material Requisition Portal</h1>
+        <div class="flex items-center space-x-4">
+            <span id="userInfo" class="text-sm font-medium"></span>
+            <button id="logoutBtn" onclick="logout()" class="hidden bg-red-600 px-3 py-1.5 rounded text-xs">Sign Out</button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6">
+        <section id="loginSection" class="max-w-md mx-auto mt-16 bg-white p-8 rounded shadow border">
+            <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <input type="text" id="loginUsername" placeholder="Username" required class="w-full border p-2 rounded">
+                <input type="password" id="loginPassword" placeholder="Password" required class="w-full border p-2 rounded">
+                <button type="submit" class="w-full bg-blue-700 text-white py-2 rounded">Log In</button>
+            </form>
+            <p id="loginError" class="text-red-600 text-sm mt-3 text-center"></p>
+        </section>
+
+        <section id="dashboardSection" class="hidden space-y-6">
+            <div id="stockWidget" class="hidden bg-white p-6 rounded shadow border">
+                <h3 class="font-bold text-lg mb-4">Live Warehouse Stock Availability</h3>
+                <table class="w-full text-left text-sm border-collapse">
+                    <tr class="bg-gray-100 border-b"><th class="p-2">Item Code</th><th class="p-2">Name</th><th class="p-2 text-blue-700">Available Stock</th></tr>
+                    <tbody id="stockTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Master Admin UI -->
+            <div id="masterAdminView" class="hidden bg-white p-6 rounded shadow border">
+                <h3 class="font-bold mb-4 text-purple-800">System Administration - Create User</h3>
+                <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
+                    <input type="text" id="newUserName" placeholder="Company/Full Name" required class="border p-2 rounded text-sm">
+                    <select id="newUserRole" required class="border p-2 rounded text-sm">
+                        <option value="CONTRACTOR">Contractor</option>
+                        <option value="PROJECT_APPROVER">Project Approver</option>
+                        <option value="MATERIAL_DEPT">Material Department</option>
+                    </select>
+                    <input type="text" id="newUserUsername" placeholder="Login Username" required class="border p-2 rounded text-sm">
+                    <input type="password" id="newUserPassword" placeholder="Password" required class="border p-2 rounded text-sm">
+                    <input type="email" id="newUserEmail" placeholder="Email Address" required class="border p-2 rounded text-sm">
+                    <button type="submit" class="bg-purple-700 text-white px-4 py-2 rounded text-sm md:col-span-2">Create User & Send Email</button>
+                </form>
+            </div>
+
+            <!-- Contractor UI -->
+            <div id="contractorView" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded shadow border">
+                    <h3 class="font-bold mb-4">Raise Requisition</h3>
+                    <form onsubmit="submitRequisition(event)" class="space-y-3">
+                        <select id="reqContract" required class="w-full border p-2 rounded text-sm"></select>
+                        <select id="reqMaterial" required class="w-full border p-2 rounded text-sm"></select>
+                        <input type="number" step="0.01" id="reqQty" placeholder="Quantity" required class="w-full border p-2 rounded text-sm">
+                        <select id="reqApprover" required class="w-full border p-2 rounded text-sm"></select>
+                        <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm w-full">Submit</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded shadow border overflow-y-auto max-h-96">
+                    <h3 class="font-bold mb-4">My Requisition Status</h3>
+                    <ul id="contractorReqList" class="space-y-2 text-sm"></ul>
+                </div>
+            </div>
+
+            <!-- Approver UI -->
+            <div id="approverView" class="hidden bg-white p-6 rounded shadow border">
+                <h3 class="font-bold mb-4 text-amber-700">Pending Approvals</h3>
+                <div id="pendingApprovalsList" class="space-y-4"></div>
+            </div>
+
+            <!-- Material Dept UI -->
+            <div id="materialDeptView" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded shadow border">
+                    <h3 class="font-bold mb-4 text-green-700">Approved Requisitions</h3>
+                    <div id="approvedReqList" class="space-y-4"></div>
+                </div>
+                <div class="bg-white p-6 rounded shadow border">
+                    <h3 class="font-bold mb-4">Receive Stock from Manufacturer</h3>
+                    <form onsubmit="receiveMaterial(event)" class="space-y-3">
+                        <select id="recMaterial" required class="w-full border p-2 rounded text-sm"></select>
+                        <input type="number" step="0.01" id="recQty" placeholder="Quantity Received" required class="w-full border p-2 text-sm rounded">
+                        <input type="text" id="recInvoice" placeholder="Invoice / Ref" required class="w-full border p-2 text-sm rounded">
+                        <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded text-sm w-full">Update Warehouse Stock</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let user = null; let token = localStorage.getItem('token');
+        const headers = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const res = await fetch('/api/auth/login', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({username: document.getElementById('loginUsername').value, password: document.getElementById('loginPassword').value})
+            });
+            const data = await res.json();
+            if(res.ok) { token = data.token; user = data.user; localStorage.setItem('token', token); localStorage.setItem('user', JSON.stringify(user)); initDashboard(); } 
+            else document.getElementById('loginError').innerText = data.error;
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+
+        function initDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('userInfo').innerText = `${user.company_name} (${user.role})`;
+
+            ['masterAdminView', 'contractorView', 'approverView', 'materialDeptView', 'stockWidget'].forEach(id => document.getElementById(id).classList.add('hidden'));
+
+            if(user.role === 'MASTER_ADMIN') document.getElementById('masterAdminView').classList.remove('hidden');
+            else if(user.role === 'CONTRACTOR') { document.getElementById('contractorView').classList.remove('hidden'); loadDropdowns(); loadMyReqs(); }
+            else if(user.role === 'PROJECT_APPROVER') { document.getElementById('approverView').classList.remove('hidden'); loadPending(); }
+            else if(user.role === 'MATERIAL_DEPT') { document.getElementById('materialDeptView').classList.remove('hidden'); document.getElementById('stockWidget').classList.remove('hidden'); loadApproved(); loadStock(); loadDropdowns(); }
+        }
+
+        async function createUser(e) {
+            e.preventDefault();
+            const res = await fetch('/api/users', { method: 'POST', headers: headers(), body: JSON.stringify({ company_name: document.getElementById('newUserName').value, role: document.getElementById('newUserRole').value, username: document.getElementById('newUserUsername').value, password: document.getElementById('newUserPassword').value, email: document.getElementById('newUserEmail').value }) });
+            if (res.ok) { alert('User Created. Email dispatched.'); e.target.reset(); }
+        }
+
+        async function loadDropdowns() {
+            if(user.role === 'CONTRACTOR') {
+                document.getElementById('reqContract').innerHTML = (await (await fetch('/api/contracts', {headers: headers()})).json()).map(c => `<option value="${c.id}">${c.contract_number}</option>`).join('');
+                document.getElementById('reqMaterial').innerHTML = (await (await fetch('/api/materials', {headers: headers()})).json()).map(m => `<option value="${m.id}">${m.item_name}</option>`).join('');
+                document.getElementById('reqApprover').innerHTML = (await (await fetch('/api/users/by-role/PROJECT_APPROVER', {headers: headers()})).json()).map(u => `<option value="${u.id}">${u.company_name}</option>`).join('');
+            }
+            if(user.role === 'MATERIAL_DEPT') {
+                document.getElementById('recMaterial').innerHTML = (await (await fetch('/api/materials', {headers: headers()})).json()).map(m => `<option value="${m.id}">${m.item_name}</option>`).join('');
+            }
+        }
+
+        async function submitRequisition(e) {
+            e.preventDefault();
+            await fetch('/api/requisitions', { method: 'POST', headers: headers(), body: JSON.stringify({ contract_id: document.getElementById('reqContract').value, material_id: document.getElementById('reqMaterial').value, requested_qty: document.getElementById('reqQty').value, project_approver_id: document.getElementById('reqApprover').value }) });
+            alert('Requisition Sent'); loadMyReqs();
+        }
+
+        async function loadMyReqs() {
+            document.getElementById('contractorReqList').innerHTML = (await (await fetch('/api/requisitions', {headers: headers()})).json()).map(r => `<li class="p-2 border rounded"><b>${r.req_number}</b> - ${r.item_name} (${r.requested_qty} ${r.unit_of_measure}) <br> Status: <b>${r.status}</b></li>`).join('');
+        }
+
+        async function loadPending() {
+            const data = await (await fetch('/api/requisitions', {headers: headers()})).json();
+            const matUsers = await (await fetch('/api/users/by-role/MATERIAL_DEPT', {headers: headers()})).json();
+            const mOpt = matUsers.map(u => `<option value="${u.id}">${u.company_name}</option>`).join('');
+            document.getElementById('pendingApprovalsList').innerHTML = data.map(r => `
+                <div class="p-4 border rounded bg-gray-50"><div class="flex justify-between"><b>${r.req_number}</b></div><p>Contractor requests <b>${r.requested_qty} ${r.unit_of_measure}</b> of ${r.item_name}.</p>
+                <div class="flex space-x-2"><input type="number" id="qty-${r.id}" value="${r.requested_qty}" class="border p-1 w-24 text-sm rounded"><select id="mat-${r.id}" class="border p-1 text-sm flex-1">${mOpt}</select>
+                <button onclick="approve(${r.id})" class="bg-green-600 text-white px-3 py-1 rounded">Approve</button>
+                <button onclick="reject(${r.id})" class="bg-red-600 text-white px-3 py-1 rounded">Reject</button></div></div>
+            `).join('');
+        }
+
+        async function approve(id) { await fetch(`/api/requisitions/${id}/approve`, { method: 'PUT', headers: headers(), body: JSON.stringify({ approved_qty: document.getElementById(`qty-${id}`).value, material_dept_id: document.getElementById(`mat-${id}`).value }) }); loadPending(); }
+        async function reject(id) { await fetch(`/api/requisitions/${id}/reject`, { method: 'PUT', headers: headers() }); loadPending(); }
+        
+        async function loadApproved() {
+            document.getElementById('approvedReqList').innerHTML = (await (await fetch('/api/requisitions', {headers: headers()})).json()).map(r => `
+                <div class="p-4 border rounded bg-green-50 flex justify-between items-center"><div><b>${r.req_number}</b><br>Approved: <b>${r.approved_qty}</b></div>
+                <div><button onclick="issue(${r.id})" class="bg-blue-600 text-white px-4 py-2 rounded">Issue Stock</button>
+                <button onclick="dlPDF(${r.id})" class="bg-slate-700 text-white px-4 py-2 rounded ml-2">DL Voucher</button></div></div>
+            `).join('');
+        }
+        
+        async function issue(id) { await fetch(`/api/requisitions/${id}/issue`, { method: 'POST', headers: headers() }); loadApproved(); loadStock(); }
+        async function dlPDF(id) {
+            const res = await fetch(`/api/transactions/voucher-pdf/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const a = document.createElement('a'); a.href = window.URL.createObjectURL(await res.blob()); a.download = `Voucher-${id}.pdf`; a.click();
+        }
+
+        async function receiveMaterial(e) {
+            e.preventDefault();
+            await fetch('/api/transactions/receive-from-mfg', { method: 'POST', headers: headers(), body: JSON.stringify({ material_id: document.getElementById('recMaterial').value, quantity: document.getElementById('recQty').value, invoice_or_ref_no: document.getElementById('recInvoice').value }) });
+            alert('Stock Updated'); loadStock(); e.target.reset();
+        }
+
+        async function loadStock() {
+            document.getElementById('stockTableBody').innerHTML = (await (await fetch('/api/reports/material-status', {headers: headers()})).json()).map(m => `
+                <tr class="border-b"><td class="p-2">${m.item_code}</td><td class="p-2">${m.item_name}</td><td class="p-2 font-bold">${m.warehouse_balance} ${m.unit_of_measure}</td></tr>
+            `).join('');
+        }
+
+        window.onload = () => { if(token && localStorage.getItem('user')) { user = JSON.parse(localStorage.getItem('user')); initDashboard(); } };
+    </script>
+</body>
+</html>
